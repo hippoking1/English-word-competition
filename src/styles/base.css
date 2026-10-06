@@ -1,0 +1,71 @@
+@import './tokens.css';
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-sans);
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  overflow-x: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+#app {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+button {
+  font-family: inherit;
+  border: none;
+  background: none;
+  cursor: pointer;
+  outline: none;
+}
+
+button:active {
+  transform: scale(0.97);
+}
+
+input, select, textarea {
+  font-family: inherit;
+  outline: none;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Four-line English Handwriting grid background helper */
+.four-line-grid {
+  background-image: 
+    linear-gradient(to bottom, transparent 24%, #f87171 25%, transparent 26%), /* Top ascender line */
+    linear-gradient(to bottom, transparent 49%, #94a3b8 50%, transparent 51%), /* Midline (dashed look or solid) */
+    linear-gradient(to bottom, transparent 74%, #3b82f6 75%, transparent 76%); /* Baseline */
+  background-size: 100% 100%;
+}

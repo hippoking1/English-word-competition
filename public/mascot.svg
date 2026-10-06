@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <linearGradient id="owlBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#C48B5E" />
+      <stop offset="100%" stop-color="#9C663D" />
+    </linearGradient>
+    <linearGradient id="owlBelly" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFF8E7" />
+      <stop offset="100%" stop-color="#FCEFD2" />
+    </linearGradient>
+  </defs>
+  <!-- Ears -->
+  <polygon points="25,35 15,12 40,25" fill="#9C663D" />
+  <polygon points="95,35 105,12 80,25" fill="#9C663D" />
+  <!-- Body -->
+  <ellipse cx="60" cy="65" rx="46" ry="48" fill="url(#owlBody)" />
+  <!-- Belly -->
+  <ellipse cx="60" cy="74" rx="32" ry="34" fill="url(#owlBelly)" />
+  <!-- Feather Marks on Belly -->
+  <path d="M 52 65 Q 60 70 68 65" stroke="#DDB888" stroke-width="2.5" fill="none" stroke-linecap="round" />
+  <path d="M 48 76 Q 60 82 72 76" stroke="#DDB888" stroke-width="2.5" fill="none" stroke-linecap="round" />
+  <path d="M 54 87 Q 60 91 66 87" stroke="#DDB888" stroke-width="2.5" fill="none" stroke-linecap="round" />
+  <!-- Eye Patches -->
+  <circle cx="43" cy="46" r="19" fill="#FFFDF8" />
+  <circle cx="77" cy="46" r="19" fill="#FFFDF8" />
+  <!-- Pupils -->
+  <circle cx="45" cy="46" r="9" fill="#2E241E" />
+  <circle cx="75" cy="46" r="9" fill="#2E241E" />
+  <!-- Highlights -->
+  <circle cx="48" cy="43" r="3.5" fill="#FFFFFF" />
+  <circle cx="78" cy="43" r="3.5" fill="#FFFFFF" />
+  <!-- Cheeks -->
+  <circle cx="30" cy="58" r="6.5" fill="#FFAAA6" opacity="0.6" />
+  <circle cx="90" cy="58" r="6.5" fill="#FFAAA6" opacity="0.6" />
+  <!-- Beak -->
+  <polygon points="56,50 64,50 60,60" fill="#FFA200" />
+  <!-- Feet -->
+  <ellipse cx="46" cy="111" rx="8" ry="4" fill="#FFA200" />
+  <ellipse cx="74" cy="111" rx="8" ry="4" fill="#FFA200" />
+  <!-- Pencil held in wing -->
+  <g transform="translate(86, 32) rotate(25)">
+    <rect x="0" y="0" width="10" height="38" rx="2" fill="#FFC83B" />
+    <polygon points="0,38 10,38 5,50" fill="#FADCB4" />
+    <polygon points="3,45 7,45 5,50" fill="#333333" />
+    <rect x="0" y="0" width="10" height="8" rx="1" fill="#FF7A6B" />
+    <rect x="0" y="7" width="10" height="2" fill="#D3D3D3" />
+  </g>
+  <!-- Wing holding pencil -->
+  <ellipse cx="90" cy="72" rx="10" ry="18" transform="rotate(-15 90 72)" fill="#84502A" />
+  <!-- Left Wing -->
+  <ellipse cx="18" cy="70" rx="10" ry="18" transform="rotate(15 18 70)" fill="#84502A" />
+</svg>
