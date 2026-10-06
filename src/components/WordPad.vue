@@ -235,12 +235,26 @@ function clearCanvas() {
 watch(
   () => props.initialInk,
   newInk => {
-    if (newInk) {
+    if (newInk && newInk.length > 0) {
       strokes.value = JSON.parse(JSON.stringify(newInk));
-      redraw();
+    } else {
+      strokes.value = [];
+      currentStroke.value = [];
+      candidates.value = [];
     }
+    redraw();
   },
   { deep: true }
+);
+
+watch(
+  () => props.initialText,
+  newText => {
+    selectedText.value = newText || '';
+    if (!newText) {
+      candidates.value = [];
+    }
+  }
 );
 
 onMounted(() => {

@@ -55,6 +55,7 @@
     <div class="input-container">
       <WordPad
         v-if="inputMode === 'handwriting'"
+        :key="`pad_${word.id}`"
         :initial-ink="initialInk"
         :initial-text="currentText"
         @change="handlePadChange"

@@ -34,6 +34,7 @@
     <main class="question-container">
       <SpellCard
         v-if="examStore.currentItem.kind === 'spell'"
+        :key="examStore.currentItem.key"
         :word="examStore.currentItem.word"
         :initial-ink="currentAnswer?.userInk"
         :initial-text="currentAnswer?.userText"
@@ -44,6 +45,7 @@
 
       <ChoiceCard
         v-else-if="examStore.currentItem.kind === 'choice'"
+        :key="examStore.currentItem.key"
         :word="examStore.currentItem.word"
         :options="examStore.currentItem.options || []"
         :initial-selected="currentAnswer?.choiceSelected"
