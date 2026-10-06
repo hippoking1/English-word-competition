@@ -43,7 +43,7 @@
 
             <!-- Handwriting preview -->
             <div class="user-ink" v-if="getAnswer(item.key)?.userInk?.length">
-              <InkReplay :ink="getAnswer(item.key)?.userInk" :width="240" :height="80" />
+              <InkReplay :ink="getAnswer(item.key)?.userInk" />
             </div>
 
             <!-- Typed text or Choice -->
@@ -261,9 +261,10 @@ onMounted(() => {
 }
 
 .user-ink {
-  width: 180px;
-  height: 60px;
-  margin-bottom: 4px;
+  width: 100%;
+  max-width: 280px;
+  height: 75px;
+  margin-bottom: 6px;
 }
 
 .user-text {
