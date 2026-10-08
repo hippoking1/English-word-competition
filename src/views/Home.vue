@@ -125,6 +125,14 @@
             >
               {{ c }} 題
             </button>
+            <button
+              class="radio-btn"
+              :class="{ active: practiceCount === 999 }"
+              @click="practiceCount = 999"
+              title="測驗所選範圍內全部單字"
+            >
+              全部
+            </button>
           </div>
         </div>
 
@@ -137,7 +145,73 @@
             <option value="r2">第 101 ~ 200 號</option>
             <option value="r3">第 201 ~ 300 號</option>
             <option value="r4">第 301 ~ 400 號</option>
+            <option value="custom">✏️ 自由自訂範圍 (任意自選區間)</option>
           </select>
+        </div>
+
+        <!-- Custom Range Control Panel -->
+        <div class="custom-range-panel" v-if="practiceScope === 'custom'">
+          <div class="custom-range-header">
+            <span class="range-panel-title">自訂編號區間</span>
+            <span class="range-count-badge" :class="{ empty: matchedWordsCount === 0 }">
+              {{ matchedWordsCount > 0 ? `共 ${matchedWordsCount} 個單字` : '無符合單字' }}
+            </span>
+          </div>
+
+          <!-- Quick number range inputs -->
+          <div class="range-inputs-row">
+            <span>從第</span>
+            <input
+              type="number"
+              v-model.number="customRangeStart"
+              min="1"
+              :max="maxWordNo"
+              class="range-num-input"
+              @input="onRangeNumChange"
+            />
+            <span>號 至 第</span>
+            <input
+              type="number"
+              v-model.number="customRangeEnd"
+              min="1"
+              :max="maxWordNo"
+              class="range-num-input"
+              @input="onRangeNumChange"
+            />
+            <span>號</span>
+          </div>
+
+          <!-- Quick range preset buttons -->
+          <div class="preset-chips">
+            <button
+              type="button"
+              class="preset-chip"
+              v-for="p in [
+                { label: '1~50', s: 1, e: 50 },
+                { label: '51~100', s: 51, e: 100 },
+                { label: '101~150', s: 101, e: 150 },
+                { label: '151~200', s: 151, e: 200 },
+                { label: '201~300', s: 201, e: 300 },
+                { label: '301~400', s: 301, e: 400 }
+              ]"
+              :key="p.label"
+              @click="applyPreset(p.s, p.e)"
+            >
+              {{ p.label }}
+            </button>
+          </div>
+
+          <!-- Advanced multi-range / flexible text input -->
+          <div class="range-advanced-row">
+            <label class="adv-label">自由輸入號碼或多區間（例如：1-50 或 1-30, 51-80, 95）：</label>
+            <input
+              type="text"
+              v-model="customRangeText"
+              class="range-text-input"
+              placeholder="例如：1-50 或 1-30, 51-80"
+              @input="onRangeTextChange"
+            />
+          </div>
         </div>
 
         <div class="modal-actions">
@@ -150,7 +224,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import Mascot from '../components/Mascot.vue';
 import { useExamStore } from '../stores/exam';
@@ -168,6 +242,76 @@ const showPracticeModal = ref(false);
 const practiceCount = ref(20);
 const practiceScope = ref('all');
 
+const customRangeStart = ref(1);
+const customRangeEnd = ref(50);
+const customRangeText = ref('1-50');
+
+const maxWordNo = computed(() => {
+  if (wordsStore.activeWords.length === 0) return 400;
+  return Math.max(...wordsStore.activeWords.map(w => w.no), 400);
+});
+
+function parseRangeString(str: string): number[] {
+  const result = new Set<number>();
+  if (!str) return [];
+  const parts = str.split(/[,，;；\s/]+/);
+  for (const part of parts) {
+    const trimmed = part.trim();
+    if (!trimmed) continue;
+    const rangeMatch = trimmed.match(/^(\d+)[-~～.]+(\d+)$/);
+    if (rangeMatch) {
+      const s = parseInt(rangeMatch[1], 10);
+      const e = parseInt(rangeMatch[2], 10);
+      const min = Math.min(s, e);
+      const max = Math.max(s, e);
+      for (let i = min; i <= max; i++) {
+        result.add(i);
+      }
+    } else {
+      const single = parseInt(trimmed, 10);
+      if (!isNaN(single) && single > 0) {
+        result.add(single);
+      }
+    }
+  }
+  return Array.from(result).sort((a, b) => a - b);
+}
+
+const parsedCustomNos = computed(() => {
+  return parseRangeString(customRangeText.value);
+});
+
+const matchedWordsCount = computed(() => {
+  if (practiceScope.value !== 'custom') {
+    return wordsStore.activeWords.length;
+  }
+  if (parsedCustomNos.value.length === 0) return 0;
+  const set = new Set(parsedCustomNos.value);
+  return wordsStore.activeWords.filter(w => set.has(w.no)).length;
+});
+
+function onRangeNumChange() {
+  const s = customRangeStart.value;
+  const e = customRangeEnd.value;
+  if (s > 0 && e > 0) {
+    customRangeText.value = `${s}-${e}`;
+  }
+}
+
+function onRangeTextChange() {
+  const match = customRangeText.value.trim().match(/^(\d+)[-~～]+(\d+)$/);
+  if (match) {
+    customRangeStart.value = parseInt(match[1], 10);
+    customRangeEnd.value = parseInt(match[2], 10);
+  }
+}
+
+function applyPreset(s: number, e: number) {
+  customRangeStart.value = s;
+  customRangeEnd.value = e;
+  customRangeText.value = `${s}-${e}`;
+}
+
 function onBankChange(e: Event) {
   const target = e.target as HTMLSelectElement;
   wordsStore.setBank(target.value);
@@ -184,22 +328,43 @@ async function startMini() {
 }
 
 async function startCustomPractice() {
-  showPracticeModal.value = false;
   let rangeStart = 1;
   let rangeEnd = 400;
+  let customNos: number[] | undefined = undefined;
 
   if (practiceScope.value === 'r1') { rangeStart = 1; rangeEnd = 100; }
   else if (practiceScope.value === 'r2') { rangeStart = 101; rangeEnd = 200; }
   else if (practiceScope.value === 'r3') { rangeStart = 201; rangeEnd = 300; }
   else if (practiceScope.value === 'r4') { rangeStart = 301; rangeEnd = 400; }
+  else if (practiceScope.value === 'custom') {
+    customNos = parsedCustomNos.value;
+    if (customNos.length === 0) {
+      alert('請先輸入或選擇有效的自訂出題範圍！');
+      return;
+    }
+    const matched = wordsStore.activeWords.filter(w => customNos!.includes(w.no));
+    if (matched.length === 0) {
+      alert('在目前選定題庫中，找不到符合此自訂範圍的單字，請重新設定！');
+      return;
+    }
+    rangeStart = customNos[0];
+    rangeEnd = customNos[customNos.length - 1];
+  }
 
-  const mode = practiceScope.value === 'unfamiliar' ? 'unfamiliar' : practiceScope.value.startsWith('r') ? 'range' : 'practice';
+  showPracticeModal.value = false;
+
+  const mode = practiceScope.value === 'unfamiliar'
+    ? 'unfamiliar'
+    : (practiceScope.value.startsWith('r') || practiceScope.value === 'custom')
+      ? 'range'
+      : 'practice';
 
   await examStore.startExam(mode, {
     count: practiceCount.value,
     bank: wordsStore.currentBank,
     rangeStart,
-    rangeEnd
+    rangeEnd,
+    customNos
   });
 
   router.push('/exam');
@@ -536,5 +701,112 @@ onMounted(async () => {
 .btn-confirm {
   background: var(--color-primary);
   color: white;
+}
+
+.custom-range-panel {
+  margin-top: 14px;
+  padding: 14px;
+  background: #f8fafc;
+  border-radius: var(--radius-sm);
+  border: 1px solid #cbd5e1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.custom-range-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.range-panel-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.range-count-badge {
+  font-size: 12px;
+  font-weight: 800;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+.range-count-badge.empty {
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.range-inputs-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #475569;
+  flex-wrap: wrap;
+}
+
+.range-num-input {
+  width: 72px;
+  padding: 6px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 800;
+  text-align: center;
+  background: white;
+  color: var(--color-primary-dark);
+}
+
+.preset-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.preset-chip {
+  padding: 4px 9px;
+  background: white;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.preset-chip:hover {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #2563eb;
+}
+
+.range-advanced-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.adv-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.range-text-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  background: white;
 }
 </style>

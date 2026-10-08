@@ -85,6 +85,17 @@ export const useWordsStore = defineStore('words', () => {
         loaded.value = true;
         return { ok: true, count: cloudRes.words.length, message: `成功從 Google 試算表同步 ${cloudRes.words.length} 個單字！` };
       }
+      // Fallback: re-fetch bundled words.json with cache buster
+      const res = await fetch(`./words.json?t=${Date.now()}`);
+      if (res.ok) {
+        const list: Word[] = await res.json();
+        words.value = list;
+        version.value = '1.0';
+        localStorage.setItem('ewc_words_version', version.value);
+        await saveLocalWords(list);
+        loaded.value = true;
+        return { ok: true, count: list.length, message: `已重新整理並載入內建 400 單題庫 (${list.length} 字)！` };
+      }
       return { ok: false, count: 0, message: 'Google 試算表 Words 分頁中尚無單字資料。' };
     } catch (err: any) {
       return { ok: false, count: 0, message: `同步失敗: ${err.message || '網路異常'}` };

@@ -15,10 +15,59 @@
       <header class="parent-header">
         <button class="back-btn" @click="$router.push('/home')">◀ 返回首頁</button>
         <h1 class="parent-title">⚙️ 家長管理專區</h1>
-        <div class="header-placeholder"></div>
+        <button
+          class="header-force-btn"
+          :disabled="isUpdating"
+          @click="handleForceUpdate"
+          title="檢查最新程式碼與題庫並強制清除快取"
+        >
+          <span :class="{ 'spin-icon': isUpdating }">🔄</span>
+          <span>{{ isUpdating ? '更新中...' : '🔄 檢查並強制更新' }}</span>
+        </button>
       </header>
 
       <main class="console-body">
+        <!-- 0. System Version & Force Update Card -->
+        <section class="section-card update-card">
+          <div class="sec-header">
+            <span class="sec-icon">🔄</span>
+            <div>
+              <h3 class="sec-title">系統版本與強制更新</h3>
+              <p class="sec-desc">遇題目修正或系統發布新版本時，一鍵強制清除本機快取、更新離線 Service Worker 並同步最新題庫</p>
+            </div>
+          </div>
+
+          <div class="update-info-grid">
+            <div class="update-info-pill">
+              <span class="info-label">本機單字總數：</span>
+              <span class="info-val">{{ wordsStore.words.length }} 字</span>
+            </div>
+            <div class="update-info-pill">
+              <span class="info-label">題庫資料版本：</span>
+              <span class="info-val code">{{ wordsStore.version || '1.0' }}</span>
+            </div>
+            <div class="update-info-pill">
+              <span class="info-label">離線快取狀態：</span>
+              <span class="info-val active">已啟用 (Service Worker)</span>
+            </div>
+          </div>
+
+          <div class="actions-row">
+            <button
+              class="action-btn force-update-btn"
+              :disabled="isUpdating"
+              @click="handleForceUpdate"
+            >
+              <span :class="{ 'spin-icon': isUpdating }">🔄</span>
+              {{ isUpdating ? '正在檢查與強制更新中...' : '🔄 檢查並強制更新' }}
+            </button>
+          </div>
+
+          <div class="test-feedback" :class="{ ok: updateFeedback.ok, err: !updateFeedback.ok }" v-if="updateFeedback.message">
+            {{ updateFeedback.message }}
+          </div>
+        </section>
+
         <!-- 1. Google Sheets Cloud Database -->
         <section class="section-card">
           <div class="sec-header">
@@ -191,6 +240,7 @@ import { ref } from 'vue';
 import Mascot from '../../components/Mascot.vue';
 import { testGasConnection, uploadWordsToCloud } from '../../lib/api';
 import { hashPin } from '../../lib/pin';
+import { forceCheckAndRefreshPWA } from '../../pwa';
 import { usePlayerStore } from '../../stores/player';
 import { useSettingsStore } from '../../stores/settings';
 import { useWordsStore } from '../../stores/words';
@@ -203,6 +253,41 @@ const wordsStore = useWordsStore();
 
 const isAuthenticated = ref(false);
 const gateError = ref(false);
+
+const isUpdating = ref(false);
+const updateFeedback = ref<{ ok?: boolean; message: string }>({ message: '' });
+
+async function handleForceUpdate() {
+  if (isUpdating.value) return;
+  isUpdating.value = true;
+  updateFeedback.value = {
+    ok: true,
+    message: '正在檢查最新版本、清除本機快取與同步題庫...'
+  };
+
+  try {
+    // 1. Force sync word bank (from GAS cloud or public words.json)
+    const wordRes = await wordsStore.syncWordsFromCloud(true);
+
+    // 2. Force check PWA Service Worker & clear Cache Storage
+    await forceCheckAndRefreshPWA();
+
+    updateFeedback.value = {
+      ok: true,
+      message: `更新完成！${wordRes.message} 系統將在 1 秒後重新整理載入最新版本...`
+    };
+
+    setTimeout(() => {
+      window.location.reload();
+    }, 1200);
+  } catch (err: any) {
+    updateFeedback.value = {
+      ok: false,
+      message: `更新失敗: ${err.message || '網路連線異常，請稍後重試'}`
+    };
+    isUpdating.value = false;
+  }
+}
 
 const gasUrl = ref(settingsStore.config.gasUrl);
 const gasToken = ref(settingsStore.config.gasToken);
@@ -663,5 +748,102 @@ textarea {
 .mgmt-btn.danger {
   color: #dc2626;
   border-color: #fca5a5;
+}
+
+.header-force-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: var(--radius-sm);
+  color: #1d4ed8;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.header-force-btn:hover:not(:disabled) {
+  background: #dbeafe;
+}
+
+.header-force-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.update-card {
+  border-left: 4px solid var(--color-primary);
+}
+
+.update-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.update-info-pill {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border-radius: var(--radius-sm);
+  border: 1px solid #e2e8f0;
+}
+
+.update-info-pill .info-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #475569;
+}
+
+.update-info-pill .info-val {
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.update-info-pill .info-val.code {
+  font-family: var(--font-mono);
+  background: #e2e8f0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.update-info-pill .info-val.active {
+  color: #059669;
+}
+
+.action-btn.force-update-btn {
+  background: #2563eb;
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+}
+
+.action-btn.force-update-btn:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.action-btn.force-update-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spin-icon {
+  display: inline-block;
+  animation: spin 1s linear infinite;
 }
 </style>

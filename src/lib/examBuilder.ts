@@ -96,6 +96,7 @@ export interface BuildExamOptions {
   dateString?: string; // e.g. "2026-10-06" for daily mini seed
   playerId?: string;
   customWordIds?: string[];
+  customNos?: number[];
 }
 
 export function buildExam(
@@ -133,9 +134,14 @@ export function buildExam(
       pool = unfamiliarWords;
     }
   } else if (mode === 'range') {
-    const start = options.rangeStart || 1;
-    const end = options.rangeEnd || 400;
-    pool = pool.filter(w => w.no >= start && w.no <= end);
+    if (options.customNos && options.customNos.length > 0) {
+      const noSet = new Set(options.customNos);
+      pool = pool.filter(w => noSet.has(w.no));
+    } else {
+      const start = options.rangeStart || 1;
+      const end = options.rangeEnd || 400;
+      pool = pool.filter(w => w.no >= start && w.no <= end);
+    }
   }
 
   if (options.customWordIds && options.customWordIds.length > 0) {
